@@ -1,0 +1,14 @@
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\bin\Debug\net8.0\DBT.exe
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\bin\Debug\net8.0\DBT.deps.json
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\bin\Debug\net8.0\DBT.runtimeconfig.json
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\bin\Debug\net8.0\DBT.dll
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\bin\Debug\net8.0\DBT.pdb
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\obj\Debug\net8.0\DBT.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\obj\Debug\net8.0\DBT.AssemblyInfoInputs.cache
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\obj\Debug\net8.0\DBT.AssemblyInfo.cs
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\obj\Debug\net8.0\DBT.csproj.CoreCompileInputs.cache
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\obj\Debug\net8.0\DBT.dll
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\obj\Debug\net8.0\refint\DBT.dll
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\obj\Debug\net8.0\DBT.pdb
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\obj\Debug\net8.0\DBT.genruntimeconfig.cache
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\obj\Debug\net8.0\ref\DBT.dll
