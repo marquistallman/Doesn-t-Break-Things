@@ -3,113 +3,62 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Text;
 
 namespace DBT;
 class Program
 {
     static async Task Main(string[] args)
     {
-        OllamaInput ollama = new OllamaInput();
-        await ollama.SetModel();
+        // Habilitar caracteres especiales y asegurar codificación
+        Console.OutputEncoding = Encoding.UTF8;
 
-        Console.WriteLine("Introduce la ruta del archivo de código:");
-        string? filePath = Console.ReadLine();
-
-        if (!string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath))
+        if (args.Length == 0)
         {
-            try
-            {
-                await showFileData(filePath, ollama);
-            }
-            catch (IOException ex)
-            {
-                Console.WriteLine($"Error al leer el archivo: {ex.Message}");
-            }
+            Print("Uso: dbt <comando> [argumentos]", ConsoleColor.Yellow);
+            Print("Comandos disponibles:", ConsoleColor.Cyan);
+            Console.WriteLine("  summarize <ruta>   Analiza y resume un archivo o directorio.");
+            Console.WriteLine("  fix <ruta>         Ayuda a corregir errores en un archivo.");
+            return;
         }
-        else if(!string.IsNullOrWhiteSpace(filePath) && Directory.Exists(filePath))
+
+        string command = args[0].ToLower();
+
+        if (command == "summarize" || command == "sumirize")
         {
-            try
-            {
-                await saveFileData(filePath, ollama);
-            }
-            catch (IOException ex)
-            {
-                Console.WriteLine($"Error al leer el archivo: {ex.Message}");
-            }
+            Tools tool = new SummarizeTool();
+            await tool.Ejecutar(args);
+        }
+        else if (command == "fix")
+        {
+            Tools tool = new FixTool();
+            await tool.Ejecutar(args);
         }
         else
         {
-            Console.WriteLine("La ruta del archivo no es válida o el archivo no existe.");
+            Print($"Comando '{command}' no reconocido.", ConsoleColor.Red);
         }
     }
-    public static async Task showFileData(string filePath, OllamaInput ollama)
+
+    static void Print(string message, ConsoleColor color)
     {
-        SourceFile archivo = new SourceFile(filePath);
-        Console.WriteLine($"Se han guardado {archivo.Lineas.Count} líneas en la lista.");
-            Console.WriteLine($"Lenguaje detectado: {archivo.Lenguaje}");
-
-            Resume resume = new Resume();
-            resume.Archivo = archivo.Ruta;
-            resume.Analizar(archivo.Lineas);
-            Console.WriteLine("\n--- Resumen del Análisis ---");
-            Console.WriteLine($"Bucles detectados: {resume.Bucles}");
-            Console.WriteLine($"Declaraciones de variables: {resume.Declaraciones}");
-            Console.WriteLine($"Transformaciones de variables: {resume.Transformaciones}");
-            Console.WriteLine($"Clases usadas: {string.Join(", ", resume.ClasesUsadas)}");
-            Console.WriteLine($"Métodos usados: {string.Join(", ", resume.MetodosUsados)}");
-            Console.WriteLine("----------------------------\n");
-
-            string jsonAnalysis = JsonSerializer.Serialize(resume, new JsonSerializerOptions { WriteIndented = true });
-            string rawResponse = await ollama.Ejecutar(jsonAnalysis);
-            
-            OllamaResponse responseProcessor = new OllamaResponse();
-            string finalReport = await responseProcessor.Ejecutar(rawResponse);
-
-            Console.WriteLine("\n--- Reporte de IA ---");
-            Console.WriteLine(finalReport);
-            Console.WriteLine("---------------------\n");
-
-            await File.WriteAllTextAsync("summarize.txt", finalReport);
-            Console.WriteLine("Resumen guardado en summarize.txt");
-    }
-    public static async Task saveFileData(string directoryPath, OllamaInput ollama)
-    {
-        List<Resume> resumes = new List<Resume>();
-        foreach (var filePath in Directory.GetFiles(directoryPath, "*", SearchOption.AllDirectories))
+        // Si la salida se redirige a un archivo, no usar colores
+        if (Console.IsOutputRedirected)
         {
-            // Ignorar archivos cuyo lenguaje no sea reconocido
-            if (SourceFile.IdentificarLenguaje(filePath) == "Desconocido") continue;
-
-            try
-            {
-                SourceFile archivo = new SourceFile(filePath);
-                Resume resume = new Resume();
-                resume.Archivo = archivo.Ruta;
-                resume.Analizar(archivo.Lineas);
-                resumes.Add(resume);
-            }
-            catch (IOException ex)
-            {
-                Console.WriteLine($"Error al leer el archivo {filePath}: {ex.Message}");
-            }
+            Console.WriteLine(message);
+            return;
         }
 
-        string salida = JsonSerializer.Serialize(resumes, new JsonSerializerOptions { WriteIndented = true });
-        string outputFilePath = "analysis_results.json";
-        File.WriteAllText(outputFilePath, salida);
-        Console.WriteLine($"\nLa información se ha guardado correctamente en: {Path.GetFullPath(outputFilePath)}");
-
-        Console.WriteLine("Generando reporte global con IA...");
-        string rawResponse = await ollama.Ejecutar(salida);
-        
-        OllamaResponse responseProcessor = new OllamaResponse();
-        string finalReport = await responseProcessor.Ejecutar(rawResponse);
-
-        Console.WriteLine("\n--- Reporte de IA (Global) ---");
-        Console.WriteLine(finalReport);
-        Console.WriteLine("------------------------------\n");
-
-        await File.WriteAllTextAsync("summarize.txt", finalReport);
-        Console.WriteLine("Resumen global guardado en summarize.txt");
+        // Usar códigos ANSI para mayor compatibilidad en VS Code y Terminales modernas
+        string ansi = color switch
+        {
+            ConsoleColor.Red => "\u001b[31m",
+            ConsoleColor.Green => "\u001b[32m",
+            ConsoleColor.Yellow => "\u001b[33m",
+            ConsoleColor.Cyan => "\u001b[36m",
+            ConsoleColor.Magenta => "\u001b[35m",
+            _ => "\u001b[37m" // Blanco por defecto
+        };
+        Console.WriteLine($"{ansi}{message}\u001b[0m");
     }
 }

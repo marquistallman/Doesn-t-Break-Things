@@ -8,34 +8,23 @@ public class SourceFile
     public string Lenguaje { get; private set; }
     public string Ruta { get; private set; }
 
+    private static readonly Dictionary<string, string> _extensionMap = new Dictionary<string, string>
+    {
+        { ".cs", "C#" }, { ".java", "Java" }, { ".py", "Python" },
+        { ".js", "JavaScript" }, { ".ts", "TypeScript" }, { ".cpp", "C++" },
+        { ".c", "C" }, { ".html", "HTML" }, { ".css", "CSS" }, { ".sql", "SQL" }
+    };
+
     public SourceFile(string ruta)
     {
-        if (!File.Exists(ruta))
-        {
-            throw new FileNotFoundException("El archivo especificado no existe.", ruta);
-        }
-
         Ruta = ruta;
+        // File.ReadAllLines lanza FileNotFoundException automáticamente si el archivo no existe
         Lineas = new List<string>(File.ReadAllLines(ruta));
         Lenguaje = IdentificarLenguaje(ruta);
     }
 
     public static string IdentificarLenguaje(string ruta)
     {
-        string extension = Path.GetExtension(ruta).ToLower();
-        return extension switch
-        {
-            ".cs" => "C#",
-            ".java" => "Java",
-            ".py" => "Python",
-            ".js" => "JavaScript",
-            ".ts" => "TypeScript",
-            ".cpp" => "C++",
-            ".c" => "C",
-            ".html" => "HTML",
-            ".css" => "CSS",
-            ".sql" => "SQL",
-            _ => "Desconocido"
-        };
+        return _extensionMap.TryGetValue(Path.GetExtension(ruta).ToLower(), out var lang) ? lang : "Desconocido";
     }
 }
