@@ -68,6 +68,9 @@ class Program
             Console.WriteLine("\n--- Reporte de IA ---");
             Console.WriteLine(finalReport);
             Console.WriteLine("---------------------\n");
+
+            await File.WriteAllTextAsync("summarize.txt", finalReport);
+            Console.WriteLine("Resumen guardado en summarize.txt");
     }
     public static async Task saveFileData(string directoryPath, OllamaInput ollama)
     {
@@ -105,5 +108,8 @@ class Program
         Console.WriteLine("\n--- Reporte de IA (Global) ---");
         Console.WriteLine(finalReport);
         Console.WriteLine("------------------------------\n");
+
+        await File.WriteAllTextAsync("summarize.txt", finalReport);
+        Console.WriteLine("Resumen global guardado en summarize.txt");
     }
 }
