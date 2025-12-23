@@ -16,7 +16,8 @@ public abstract class OllamaBridge
     // Método general para escoger el modelo
     public async Task SetModel()
     {
-        string configFile = "properties.json";
+        string exePath = AppDomain.CurrentDomain.BaseDirectory;
+        string configFile = Path.Combine(exePath, "properties.json");
         List<string> availableModels = new List<string>();
         bool ollamaReachable = false;
 
