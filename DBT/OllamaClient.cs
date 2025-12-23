@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -12,11 +14,79 @@ public abstract class OllamaBridge
     protected const string Url = "http://localhost:11434/api/generate";
 
     // Método general para escoger el modelo
-    public void SetModel(string model)
+    public async Task SetModel()
     {
-        if (!string.IsNullOrWhiteSpace(model))
+        string configFile = "properties.json";
+        bool modelFound = false;
+
+        if (File.Exists(configFile))
         {
-            ModelName = model;
+            try
+            {
+                string json = await File.ReadAllTextAsync(configFile);
+                using JsonDocument doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("model", out JsonElement modelElement))
+                {
+                    string? model = modelElement.GetString();
+                    if (!string.IsNullOrWhiteSpace(model))
+                    {
+                        ModelName = model;
+                        Console.WriteLine($"Modelo cargado desde {configFile}: {ModelName}");
+                        modelFound = true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al leer {configFile}: {ex.Message}");
+            }
+        }
+
+        if (!modelFound)
+        {
+            Console.WriteLine("Buscando modelos disponibles en Ollama...");
+            try
+            {
+                var response = await Client.GetAsync("http://localhost:11434/api/tags");
+                response.EnsureSuccessStatusCode();
+                string responseBody = await response.Content.ReadAsStringAsync();
+
+                using JsonDocument doc = JsonDocument.Parse(responseBody);
+                if (doc.RootElement.TryGetProperty("models", out JsonElement modelsElement))
+                {
+                    var models = new List<string>();
+                    int i = 1;
+                    foreach (var model in modelsElement.EnumerateArray())
+                    {
+                        string name = model.GetProperty("name").GetString() ?? "Desconocido";
+                        models.Add(name);
+                        Console.WriteLine($"{i}. {name}");
+                        i++;
+                    }
+
+                    if (models.Count > 0)
+                    {
+                        Console.Write("Seleccione el número del modelo: ");
+                        if (int.TryParse(Console.ReadLine(), out int selection) && selection >= 1 && selection <= models.Count)
+                        {
+                            ModelName = models[selection - 1];
+                            Console.WriteLine($"Modelo seleccionado: {ModelName}");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Selección inválida. Se usará el modelo por defecto.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("No se encontraron modelos instalados en Ollama.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"No se pudo conectar con Ollama para listar modelos: {ex.Message}");
+            }
         }
     }
 

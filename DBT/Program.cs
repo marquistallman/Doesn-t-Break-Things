@@ -2,12 +2,16 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace DBT;
 class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
+        OllamaInput ollama = new OllamaInput();
+        await ollama.SetModel();
+
         Console.WriteLine("Introduce la ruta del archivo de código:");
         string? filePath = Console.ReadLine();
 
@@ -15,7 +19,7 @@ class Program
         {
             try
             {
-                showFileData(filePath);
+                await showFileData(filePath, ollama);
             }
             catch (IOException ex)
             {
@@ -26,7 +30,7 @@ class Program
         {
             try
             {
-                saveFileData(filePath);
+                await saveFileData(filePath, ollama);
             }
             catch (IOException ex)
             {
@@ -38,7 +42,7 @@ class Program
             Console.WriteLine("La ruta del archivo no es válida o el archivo no existe.");
         }
     }
-    public static void showFileData(string filePath)
+    public static async Task showFileData(string filePath, OllamaInput ollama)
     {
         SourceFile archivo = new SourceFile(filePath);
         Console.WriteLine($"Se han guardado {archivo.Lineas.Count} líneas en la lista.");
@@ -54,8 +58,18 @@ class Program
             Console.WriteLine($"Clases usadas: {string.Join(", ", resume.ClasesUsadas)}");
             Console.WriteLine($"Métodos usados: {string.Join(", ", resume.MetodosUsados)}");
             Console.WriteLine("----------------------------\n");
+
+            string jsonAnalysis = JsonSerializer.Serialize(resume, new JsonSerializerOptions { WriteIndented = true });
+            string rawResponse = await ollama.Ejecutar(jsonAnalysis);
+            
+            OllamaResponse responseProcessor = new OllamaResponse();
+            string finalReport = await responseProcessor.Ejecutar(rawResponse);
+
+            Console.WriteLine("\n--- Reporte de IA ---");
+            Console.WriteLine(finalReport);
+            Console.WriteLine("---------------------\n");
     }
-    public static void saveFileData(string directoryPath)
+    public static async Task saveFileData(string directoryPath, OllamaInput ollama)
     {
         List<Resume> resumes = new List<Resume>();
         foreach (var filePath in Directory.GetFiles(directoryPath, "*", SearchOption.AllDirectories))
@@ -81,5 +95,15 @@ class Program
         string outputFilePath = "analysis_results.json";
         File.WriteAllText(outputFilePath, salida);
         Console.WriteLine($"\nLa información se ha guardado correctamente en: {Path.GetFullPath(outputFilePath)}");
+
+        Console.WriteLine("Generando reporte global con IA...");
+        string rawResponse = await ollama.Ejecutar(salida);
+        
+        OllamaResponse responseProcessor = new OllamaResponse();
+        string finalReport = await responseProcessor.Ejecutar(rawResponse);
+
+        Console.WriteLine("\n--- Reporte de IA (Global) ---");
+        Console.WriteLine(finalReport);
+        Console.WriteLine("------------------------------\n");
     }
 }

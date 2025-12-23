@@ -12,3 +12,4 @@ C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\obj\Debug\net8.0\refint\D
 C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\obj\Debug\net8.0\DBT.pdb
 C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\obj\Debug\net8.0\DBT.genruntimeconfig.cache
 C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\obj\Debug\net8.0\ref\DBT.dll
+C:\Users\davir\OneDrive\Documentos\cosas david\DBT\DBT\obj\Debug\net8.0\DBT.sourcelink.json
