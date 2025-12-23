@@ -18,6 +18,7 @@ class Program
             Print("Uso: dbt <comando> [argumentos]", ConsoleColor.Yellow);
             Print("Comandos disponibles:", ConsoleColor.Cyan);
             Console.WriteLine("  summarize <ruta>   Analiza y resume un archivo o directorio.");
+            Console.WriteLine("  fix <ruta>         Ayuda a corregir errores en un archivo.");
             return;
         }
 
@@ -26,6 +27,11 @@ class Program
         if (command == "summarize" || command == "sumirize")
         {
             Tools tool = new SummarizeTool();
+            await tool.Ejecutar(args);
+        }
+        else if (command == "fix")
+        {
+            Tools tool = new FixTool();
             await tool.Ejecutar(args);
         }
         else
