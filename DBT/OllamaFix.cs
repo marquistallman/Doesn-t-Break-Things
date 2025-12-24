@@ -31,16 +31,17 @@ public class OllamaFix : OllamaBridge
         {
             model = ModelName,
             prompt = $"[ROLE]: Expert Code Fixer\n" +
-                     $"[TASK]: Fix the C# code provided below. Output ONLY the corrected code block.\n" +
+                     $"[TASK]: Review the C# code provided below. For lines with errors, keep the original code and append the correction as a comment.\n" +
                      $"[RULES]:\n" +
                      $"1. Use a markdown code block (```).\n" +
-                     $"2. RETURN CODE ONLY. Do NOT add comments at the end of lines (e.g. 'int x = 0; // Fixed').\n" +
-                     $"3. REMOVE existing error comments from the input.\n" +
+                     $"2. For lines with errors: Keep the original line content, and append '// cambio sugerido ' followed by the corrected code statement.\n" +
+                     $"   Example: int x = \"text\"; // cambio sugerido int x = 0;\n" +
+                     $"3. For correct lines: Return them exactly as is.\n" +
                      $"4. Maintain original indentation and newlines.\n" +
                      (string.IsNullOrEmpty(problemas) ? "" : $"\n[ISSUES DETECTED]:\n{problemas}") +
-                     $"\n[CODE TO FIX]:\n" +
+                     $"\n[CODE]:\n" +
                      $"{codigoLimpio}\n\n" + // Enviamos el código como texto plano, no JSON
-                     $"[CORRECTED CODE]:",
+                     $"[OUTPUT]:",
             stream = false,
             options = new { temperature = 0.1 } // Temperatura baja para mayor precisión
         };
