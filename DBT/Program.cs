@@ -15,11 +15,7 @@ class Program
 
         if (args.Length == 0)
         {
-            Print("Uso: dbt <comando> [argumentos]", ConsoleColor.Yellow);
-            Print("Comandos disponibles:", ConsoleColor.Cyan);
-            Console.WriteLine("  summarize <ruta>   Analiza y resume un archivo o directorio.");
-            Console.WriteLine("  fix <ruta>         Ayuda a corregir errores en un archivo.");
-            Console.WriteLine("  implement <origen> <destino> Implementa requerimientos o código en un proyecto.");
+            ShowHelp();
             return;
         }
 
@@ -40,10 +36,24 @@ class Program
             Tools tool = new ImplementTool();
             await tool.Ejecutar(args);
         }
+        else if (command == "help")
+        {
+            ShowHelp();
+        }
         else
         {
             Print($"Comando '{command}' no reconocido.", ConsoleColor.Red);
         }
+    }
+
+    static void ShowHelp()
+    {
+        Print("Uso: dbt <comando> [argumentos]", ConsoleColor.Yellow);
+        Print("Comandos disponibles:", ConsoleColor.Cyan);
+        Console.WriteLine("  summarize <ruta>   Analiza y resume un archivo o directorio.");
+        Console.WriteLine("  fix <ruta>         Ayuda a corregir errores en un archivo.");
+        Console.WriteLine("  implement <origen> <destino> Implementa requerimientos o código en un proyecto.");
+        Console.WriteLine("  help               Muestra esta ayuda.");
     }
 
     public static void Print(string message, ConsoleColor color)

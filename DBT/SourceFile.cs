@@ -12,7 +12,9 @@ public class SourceFile
     {
         { ".cs", "C#" }, { ".java", "Java" }, { ".py", "Python" },
         { ".js", "JavaScript" }, { ".ts", "TypeScript" }, { ".cpp", "C++" },
-        { ".c", "C" }, { ".html", "HTML" }, { ".css", "CSS" }, { ".sql", "SQL" }
+        { ".c", "C" }, { ".html", "HTML" }, { ".css", "CSS" }, { ".sql", "SQL" },
+        { ".json", "JSON" }, { ".xml", "XML" }, { ".yaml", "YAML" }, { ".yml", "YAML" },
+        { ".csproj", "C# Project" }, { ".sln", "Solution" }, { ".md", "Markdown" }
     };
 
     public SourceFile(string ruta)

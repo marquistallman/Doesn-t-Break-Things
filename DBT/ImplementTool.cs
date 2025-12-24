@@ -87,16 +87,35 @@ public class ImplementTool : Tools
         if (Directory.Exists(path))
         {
             var sb = new StringBuilder();
+            // Obtener archivos excluyendo carpetas basura comunes para no saturar el contexto
             var files = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
+            
             foreach (var file in files)
             {
+                // Filtros de exclusión de directorios
+                if (file.Contains(Path.DirectorySeparatorChar + ".git") || 
+                    file.Contains(Path.DirectorySeparatorChar + "bin") || 
+                    file.Contains(Path.DirectorySeparatorChar + "obj") || 
+                    file.Contains(Path.DirectorySeparatorChar + "node_modules") ||
+                    file.Contains(Path.DirectorySeparatorChar + ".vs")) 
+                    continue;
+
                 // Ignorar archivos binarios o desconocidos para no saturar el contexto
-                if (SourceFile.IdentificarLenguaje(file) == "Desconocido" && !file.EndsWith(".txt") && !file.EndsWith(".md")) continue;
+                // Ahora SourceFile soporta más tipos, pero mantenemos el filtro de seguridad
+                if (SourceFile.IdentificarLenguaje(file) == "Desconocido" && !file.EndsWith(".txt")) continue;
                 
-                string relPath = Path.GetRelativePath(path, file);
-                sb.AppendLine($"// --- FILE: {relPath} ---");
-                sb.AppendLine(await File.ReadAllTextAsync(file));
-                sb.AppendLine();
+                try 
+                {
+                    string relPath = Path.GetRelativePath(path, file);
+                    sb.AppendLine($"// --- FILE: {relPath} ---");
+                    sb.AppendLine(await File.ReadAllTextAsync(file));
+                    sb.AppendLine();
+                }
+                catch (Exception ex)
+                {
+                    // Ignorar archivos que no se pueden leer (bloqueados o sin permisos)
+                    Console.WriteLine($"[Warning] No se pudo leer {file}: {ex.Message}");
+                }
             }
             return sb.ToString();
         }
