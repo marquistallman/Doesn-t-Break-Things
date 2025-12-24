@@ -19,6 +19,7 @@ class Program
             Print("Comandos disponibles:", ConsoleColor.Cyan);
             Console.WriteLine("  summarize <ruta>   Analiza y resume un archivo o directorio.");
             Console.WriteLine("  fix <ruta>         Ayuda a corregir errores en un archivo.");
+            Console.WriteLine("  implement <origen> <destino> Implementa requerimientos o código en un proyecto.");
             return;
         }
 
@@ -34,13 +35,18 @@ class Program
             Tools tool = new FixTool();
             await tool.Ejecutar(args);
         }
+        else if (command == "implement" || command == "add")
+        {
+            Tools tool = new ImplementTool();
+            await tool.Ejecutar(args);
+        }
         else
         {
             Print($"Comando '{command}' no reconocido.", ConsoleColor.Red);
         }
     }
 
-    static void Print(string message, ConsoleColor color)
+    public static void Print(string message, ConsoleColor color)
     {
         // Si la salida se redirige a un archivo, no usar colores
         if (Console.IsOutputRedirected)
