@@ -37,6 +37,10 @@ class Program
             case "create":
                 await new CreateTool().Ejecutar(args);
                 break;
+            case "requirements":
+            case "specs":
+                ShowRequirements();
+                break;
             case "help":
                 ShowHelp();
                 break;
@@ -54,7 +58,18 @@ class Program
         Console.WriteLine("  fix <ruta>         Ayuda a corregir errores en un archivo.");
         Console.WriteLine("  implement <origen> <destino> Implementa requerimientos o código en un proyecto.");
         Console.WriteLine("  create <idea> <destino> Crea la estructura y requisitos de un proyecto desde una idea.");
+        Console.WriteLine("  requirements       Muestra los requisitos y capacidades de esta aplicación.");
         Console.WriteLine("  help               Muestra esta ayuda.");
+    }
+
+    static void ShowRequirements()
+    {
+        Print("=== Requisitos y Capacidades de DBT ===", ConsoleColor.Magenta);
+        Console.WriteLine("1. Análisis de Código (Summarize): Resumen de archivos y directorios.");
+        Console.WriteLine("2. Corrección (Fix): Sugerencias de arreglos para errores de código.");
+        Console.WriteLine("3. Implementación (Implement): Generación de código basada en planes y requisitos.");
+        Console.WriteLine("4. Creación (Create): Generación de estructura de proyecto desde ideas.");
+        Console.WriteLine("5. Core: Integración con Ollama, manejo de contexto y configuración dinámica.");
     }
 
     public static void Print(string message, ConsoleColor color)
