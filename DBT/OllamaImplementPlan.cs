@@ -27,14 +27,17 @@ public class OllamaImplementPlan : OllamaBridge
             prompt = $"[ROLE]: Senior Software Architect\n" +
                      $"[TASK]: Analyze the SOURCE requirements and TARGET project structure. Create a detailed plan of files to create or modify.\n" +
                      $"[OUTPUT]: A JSON Array where each item represents a file.\n" +
-                     $"[FORMAT]: \n" +
+                     $"[EXAMPLE]: \n" +
                      $"[\n" +
-                     $"  {{ \"path\": \"Folder/File.cs\", \"instruction\": \"Detailed instructions for the content of this file...\" }},\n" +
-                     $"  ...\n" +
+                     $"  {{ \"name\": \"src/main.py\", \"instructions\": \"Implement the main entry point. Import math_parser. Initialize the app...\" }},\n" +
+                     $"  {{ \"name\": \"tests/test_main.py\", \"instructions\": \"Create unit tests for the main module...\" }}\n" +
                      $"]\n" +
                      $"[SOURCE]:\n{sourceContext}\n" +
                      $"[TARGET]:\n{targetContext}\n" +
-                     $"[IMPORTANT]: Return ONLY the JSON array. Do not use markdown blocks.",
+                     $"[IMPORTANT]: \n" +
+                     $"1. Return ONLY the JSON array.\n" +
+                     $"2. Use the programming language and file extensions specified in SOURCE (e.g. .py, .js, .cs).\n" +
+                     $"3. Do NOT use generic instructions. Extract specific requirements for each file from SOURCE.",
             stream = false,
             format = "json" // Fuerza al modelo a responder en JSON válido
         };

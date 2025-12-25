@@ -79,18 +79,65 @@ public class ImplementTool : Tools
                 string planFile = string.IsNullOrEmpty(planDir) ? "implementation_plan.json" : Path.Combine(planDir, "implementation_plan.json");
                 await File.WriteAllTextAsync(planFile, planJson);
 
+                // Limpieza de JSON: Intentar extraer el array o el objeto del texto si el modelo incluyó explicaciones
+                string processedJson = planJson;
+                int idxStartArr = planJson.IndexOf('[');
+                int idxEndArr = planJson.LastIndexOf(']');
+                
+                if (idxStartArr >= 0 && idxEndArr > idxStartArr)
+                {
+                    processedJson = planJson.Substring(idxStartArr, idxEndArr - idxStartArr + 1);
+                }
+                else
+                {
+                    // Si no encuentra array, intentar buscar objeto único para el fallback
+                    int idxStartObj = planJson.IndexOf('{');
+                    int idxEndObj = planJson.LastIndexOf('}');
+                    if (idxStartObj >= 0 && idxEndObj > idxStartObj)
+                    {
+                        processedJson = planJson.Substring(idxStartObj, idxEndObj - idxStartObj + 1);
+                    }
+                }
+
                 // 5. Procesar Plan
                 try 
                 {
-                    plan = JsonSerializer.Deserialize<List<FilePlanItem>>(planJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    plan = JsonSerializer.Deserialize<List<FilePlanItem>>(processedJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 }
                 catch 
                 {
                     // Intento de recuperación: si devuelve un objeto único en vez de array (tu caso específico)
                     try {
-                        var single = JsonSerializer.Deserialize<FilePlanItem>(planJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        var single = JsonSerializer.Deserialize<FilePlanItem>(processedJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                         if (single != null) plan = new List<FilePlanItem> { single };
                     } catch { }
+
+                    // Intento de recuperación 2: Diccionario { "path": { "instruction": "..." } } (Formato creativo del modelo)
+                    if (plan == null)
+                    {
+                        try 
+                        {
+                            var dict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(processedJson);
+                            if (dict != null)
+                            {
+                                plan = new List<FilePlanItem>();
+                                foreach (var kvp in dict)
+                                {
+                                    string instr = "";
+                                    // Manejar si el valor es un objeto o un string directo
+                                    if (kvp.Value.ValueKind == JsonValueKind.Object)
+                                    {
+                                        if (kvp.Value.TryGetProperty("instruction", out var i) || kvp.Value.TryGetProperty("instructions", out i))
+                                            instr = i.GetString() ?? "";
+                                    }
+                                    else if (kvp.Value.ValueKind == JsonValueKind.String)
+                                        instr = kvp.Value.GetString() ?? "";
+                                    
+                                    plan.Add(new FilePlanItem { Name = kvp.Key, Instructions = instr });
+                                }
+                            }
+                        } catch { }
+                    }
 
                     if (plan == null) Program.Print($"Error al interpretar JSON (Intento {currentRetry}).", ConsoleColor.Red);
                     
@@ -113,21 +160,21 @@ public class ImplementTool : Tools
             foreach (var item in plan)
             {
                 // Validar que la ruta sea válida para evitar errores de acceso (ej: ruta vacía apunta al directorio raíz)
-                if (string.IsNullOrWhiteSpace(item.Path) || item.Path.Trim() == "." || item.Path.Trim() == "/" || item.Path.Trim() == "\\")
+                if (string.IsNullOrWhiteSpace(item.Name) || item.Name.Trim() == "." || item.Name.Trim() == "/" || item.Name.Trim() == "\\")
                 {
                     Program.Print("Advertencia: Se omitió un archivo del plan por tener una ruta inválida o vacía.", ConsoleColor.Yellow);
                     continue;
                 }
 
-                Program.Print($"\nGenerando: {item.Path}", ConsoleColor.Cyan);
+                Program.Print($"\nGenerando: {item.Name}", ConsoleColor.Cyan);
                 try 
                 {
-                    string content = await generator.GenerarArchivo(item.Path, item.Instruction, sourceContext, targetContext);
-                    await SaveFile(targetPath, item.Path, content);
+                    string content = await generator.GenerarArchivo(item.Name, item.Instructions, sourceContext, targetContext);
+                    await SaveFile(targetPath, item.Name, content);
                 }
                 catch (Exception ex)
                 {
-                    Program.Print($"Error generando {item.Path}: {ex.Message}", ConsoleColor.Red);
+                    Program.Print($"Error generando {item.Name}: {ex.Message}", ConsoleColor.Red);
                 }
             }
         }
@@ -140,8 +187,11 @@ public class ImplementTool : Tools
     // Clase auxiliar para deserializar el plan
     private class FilePlanItem
     {
-        public string Path { get; set; } = "";
-        public string Instruction { get; set; } = "";
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public string Name { get; set; } = "";
+
+        [System.Text.Json.Serialization.JsonPropertyName("instructions")]
+        public string Instructions { get; set; } = "";
     }
 
     // Lee un archivo o recorre un directorio recursivamente para obtener todo el código
