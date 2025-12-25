@@ -21,28 +21,32 @@ class Program
 
         string command = args[0].ToLower();
 
-        if (command == "summarize" || command == "sumirize")
+        switch (command)
         {
-            Tools tool = new SummarizeTool();
-            await tool.Ejecutar(args);
-        }
-        else if (command == "fix")
-        {
-            Tools tool = new FixTool();
-            await tool.Ejecutar(args);
-        }
-        else if (command == "implement" || command == "add")
-        {
-            Tools tool = new ImplementTool();
-            await tool.Ejecutar(args);
-        }
-        else if (command == "help")
-        {
-            ShowHelp();
-        }
-        else
-        {
-            Print($"Comando '{command}' no reconocido.", ConsoleColor.Red);
+            case "summarize":
+            case "sumirize":
+                await new SummarizeTool().Ejecutar(args);
+                break;
+            case "fix":
+                await new FixTool().Ejecutar(args);
+                break;
+            case "implement":
+            case "add":
+                await new ImplementTool().Ejecutar(args);
+                break;
+            case "create":
+                await new CreateTool().Ejecutar(args);
+                break;
+            case "requirements":
+            case "specs":
+                ShowRequirements();
+                break;
+            case "help":
+                ShowHelp();
+                break;
+            default:
+                Print($"Comando '{command}' no reconocido.", ConsoleColor.Red);
+                break;
         }
     }
 
@@ -53,7 +57,19 @@ class Program
         Console.WriteLine("  summarize <ruta>   Analiza y resume un archivo o directorio.");
         Console.WriteLine("  fix <ruta>         Ayuda a corregir errores en un archivo.");
         Console.WriteLine("  implement <origen> <destino> Implementa requerimientos o código en un proyecto.");
+        Console.WriteLine("  create <idea> <destino> Crea la estructura y requisitos de un proyecto desde una idea.");
+        Console.WriteLine("  requirements       Muestra los requisitos y capacidades de esta aplicación.");
         Console.WriteLine("  help               Muestra esta ayuda.");
+    }
+
+    static void ShowRequirements()
+    {
+        Print("=== Requisitos y Capacidades de DBT ===", ConsoleColor.Magenta);
+        Console.WriteLine("1. Análisis de Código (Summarize): Resumen de archivos y directorios.");
+        Console.WriteLine("2. Corrección (Fix): Sugerencias de arreglos para errores de código.");
+        Console.WriteLine("3. Implementación (Implement): Generación de código basada en planes y requisitos.");
+        Console.WriteLine("4. Creación (Create): Generación de estructura de proyecto desde ideas.");
+        Console.WriteLine("5. Core: Integración con Ollama, manejo de contexto y configuración dinámica.");
     }
 
     public static void Print(string message, ConsoleColor color)

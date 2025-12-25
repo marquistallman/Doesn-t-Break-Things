@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 public abstract class OllamaBridge
 {
     protected string ModelName { get; private set; } = "llama3"; // Modelo por defecto
-    protected static readonly HttpClient Client = new HttpClient();
+    protected static readonly HttpClient Client = new HttpClient { Timeout = System.Threading.Timeout.InfiniteTimeSpan };
     protected const string Url = "http://localhost:11434/api/generate";
 
     // Método general para escoger el modelo

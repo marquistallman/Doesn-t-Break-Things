@@ -60,23 +60,138 @@ public class ImplementTool : Tools
             
             string jsonPayload = JsonSerializer.Serialize(payload);
 
-            // 4. Llamar a IA
-            OllamaImplement ollama = new OllamaImplement();
-            await ollama.SetModel();
-            
-            string rawResponse = await ollama.Ejecutar(jsonPayload);
-            
-            // 5. Procesar respuesta (Extraer texto limpio)
-            OllamaResponse responseProcessor = new OllamaResponse();
-            string planCode = await responseProcessor.Ejecutar(rawResponse);
+            // 4. Generar Plan de Implementación (Lista de archivos e instrucciones)
+            OllamaImplementPlan planner = new OllamaImplementPlan();
+            await planner.SetModel();
+            List<FilePlanItem>? plan = null;
+            int maxRetries = 3;
+            int currentRetry = 0;
 
-            // 6. Aplicar cambios (Escribir archivos)
-            await ApplyImplementation(targetPath, planCode);
+            while (plan == null && currentRetry < maxRetries)
+            {
+                currentRetry++;
+                if (currentRetry > 1) Program.Print($"Reintentando generación del plan (Intento {currentRetry}/{maxRetries})...", ConsoleColor.Yellow);
+
+                string planJson = await planner.Ejecutar(jsonPayload);
+
+                // Guardar el plan JSON para revisión
+                string? planDir = File.Exists(sourcePath) ? Path.GetDirectoryName(sourcePath) : sourcePath;
+                string planFile = string.IsNullOrEmpty(planDir) ? "implementation_plan.json" : Path.Combine(planDir, "implementation_plan.json");
+                await File.WriteAllTextAsync(planFile, planJson);
+
+                // Limpieza de JSON: Intentar extraer el array o el objeto del texto si el modelo incluyó explicaciones
+                string processedJson = planJson;
+                int idxStartArr = planJson.IndexOf('[');
+                int idxEndArr = planJson.LastIndexOf(']');
+                
+                if (idxStartArr >= 0 && idxEndArr > idxStartArr)
+                {
+                    processedJson = planJson.Substring(idxStartArr, idxEndArr - idxStartArr + 1);
+                }
+                else
+                {
+                    // Si no encuentra array, intentar buscar objeto único para el fallback
+                    int idxStartObj = planJson.IndexOf('{');
+                    int idxEndObj = planJson.LastIndexOf('}');
+                    if (idxStartObj >= 0 && idxEndObj > idxStartObj)
+                    {
+                        processedJson = planJson.Substring(idxStartObj, idxEndObj - idxStartObj + 1);
+                    }
+                }
+
+                // 5. Procesar Plan
+                try 
+                {
+                    plan = JsonSerializer.Deserialize<List<FilePlanItem>>(processedJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                }
+                catch 
+                {
+                    // Intento de recuperación: si devuelve un objeto único en vez de array (tu caso específico)
+                    try {
+                        var single = JsonSerializer.Deserialize<FilePlanItem>(processedJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        if (single != null) plan = new List<FilePlanItem> { single };
+                    } catch { }
+
+                    // Intento de recuperación 2: Diccionario { "path": { "instruction": "..." } } (Formato creativo del modelo)
+                    if (plan == null)
+                    {
+                        try 
+                        {
+                            var dict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(processedJson);
+                            if (dict != null)
+                            {
+                                plan = new List<FilePlanItem>();
+                                foreach (var kvp in dict)
+                                {
+                                    string instr = "";
+                                    // Manejar si el valor es un objeto o un string directo
+                                    if (kvp.Value.ValueKind == JsonValueKind.Object)
+                                    {
+                                        if (kvp.Value.TryGetProperty("instruction", out var i) || kvp.Value.TryGetProperty("instructions", out i))
+                                            instr = i.GetString() ?? "";
+                                    }
+                                    else if (kvp.Value.ValueKind == JsonValueKind.String)
+                                        instr = kvp.Value.GetString() ?? "";
+                                    
+                                    plan.Add(new FilePlanItem { Name = kvp.Key, Instructions = instr });
+                                }
+                            }
+                        } catch { }
+                    }
+
+                    if (plan == null) Program.Print($"Error al interpretar JSON (Intento {currentRetry}).", ConsoleColor.Red);
+                    
+                    if (currentRetry == maxRetries && plan == null) Console.WriteLine(planJson);
+                }
+            }
+
+            if (plan == null || plan.Count == 0)
+            {
+                Program.Print("El plan de implementación está vacío.", ConsoleColor.Yellow);
+                return;
+            }
+
+            Program.Print($"\nPlan generado: {plan.Count} archivos a procesar.", ConsoleColor.Green);
+
+            // 6. Ejecutar Plan (Archivo por archivo)
+            OllamaImplementFile generator = new OllamaImplementFile();
+            await generator.SetModel(); // Usar el mismo modelo configurado
+            
+            foreach (var item in plan)
+            {
+                // Validar que la ruta sea válida para evitar errores de acceso (ej: ruta vacía apunta al directorio raíz)
+                if (string.IsNullOrWhiteSpace(item.Name) || item.Name.Trim() == "." || item.Name.Trim() == "/" || item.Name.Trim() == "\\")
+                {
+                    Program.Print("Advertencia: Se omitió un archivo del plan por tener una ruta inválida o vacía.", ConsoleColor.Yellow);
+                    continue;
+                }
+
+                Program.Print($"\nGenerando: {item.Name}", ConsoleColor.Cyan);
+                try 
+                {
+                    string content = await generator.GenerarArchivo(item.Name, item.Instructions, sourceContext, targetContext);
+                    await SaveFile(targetPath, item.Name, content);
+                }
+                catch (Exception ex)
+                {
+                    Program.Print($"Error generando {item.Name}: {ex.Message}", ConsoleColor.Red);
+                }
+            }
         }
         catch (Exception ex)
         {
             Program.Print($"Error durante la ejecución: {ex.Message}", ConsoleColor.Red);
         }
+    }
+
+    // Clase auxiliar para deserializar el plan
+    private class FilePlanItem
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public string Name { get; set; } = "";
+
+        [System.Text.Json.Serialization.JsonPropertyName("instructions")]
+        public string Instructions { get; set; } = "";
     }
 
     // Lee un archivo o recorre un directorio recursivamente para obtener todo el código
@@ -120,41 +235,6 @@ public class ImplementTool : Tools
             return sb.ToString();
         }
         return "";
-    }
-
-    // Parsea la respuesta de la IA buscando marcadores "// FILE:" para crear/sobrescribir archivos
-    private async Task ApplyImplementation(string targetRoot, string aiResponse)
-    {
-        Program.Print("\n--- Aplicando Implementación ---", ConsoleColor.Magenta);
-        
-        using StringReader sr = new StringReader(aiResponse);
-        string? line;
-        string? currentFile = null;
-        StringBuilder fileContent = new StringBuilder();
-
-        while ((line = await sr.ReadLineAsync()) != null)
-        {
-            string trimmed = line.Trim();
-            
-            // Detectar marcador de archivo (Soporta // FILE: y # FILE:)
-            if (trimmed.StartsWith("// FILE:") || trimmed.StartsWith("# FILE:"))
-            {
-                // Guardar archivo anterior si existe
-                if (currentFile != null) await SaveFile(targetRoot, currentFile, fileContent.ToString());
-
-                // Iniciar nuevo archivo
-                currentFile = trimmed.Substring(trimmed.IndexOf(':') + 1).Trim();
-                fileContent.Clear();
-                continue;
-            }
-
-            // Ignorar delimitadores de markdown si están solos
-            if (trimmed.StartsWith("```")) continue;
-
-            if (currentFile != null) fileContent.AppendLine(line);
-        }
-
-        if (currentFile != null) await SaveFile(targetRoot, currentFile, fileContent.ToString());
     }
 
     private async Task SaveFile(string root, string relativePath, string content)
