@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace DBT;
+namespace DBT.Services;
 
 public class OllamaCreate : OllamaBridge
 {

@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
 
+namespace DBT.Tools;
+
 public abstract class Tools
 {
     public abstract Task Ejecutar(string[] args);

@@ -5,7 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-
+using DBT.Models;
+using DBT.Services;
+namespace DBT.Tools;
 public class FixTool : Tools
 {
     public override async Task Ejecutar(string[] args)

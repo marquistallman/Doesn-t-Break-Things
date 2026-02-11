@@ -6,6 +6,8 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
+namespace DBT.Services;
+
 // Clase abstracta base
 public abstract class OllamaBridge
 {

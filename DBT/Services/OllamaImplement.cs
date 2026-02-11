@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-
+namespace DBT.Services;
 // Clase para la herramienta Implement: Genera código basado en requisitos y contexto
 public class OllamaImplement : OllamaBridge
 {

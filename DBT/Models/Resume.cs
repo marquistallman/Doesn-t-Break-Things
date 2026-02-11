@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
 
+namespace DBT.Models;
+
 public class Resume
 {
     public string? Archivo { get; set; }
@@ -20,6 +22,15 @@ public class Resume
         "protected", "void", "static", "namespace", "get", "set", "out", "in"
     };
 
+    // Optimización: Regex compilados y estáticos para evitar overhead en cada línea
+    private static readonly Regex _loopRegex = new Regex(@"\b(for|foreach|while)\b", RegexOptions.Compiled);
+    private static readonly Regex _newClassRegex = new Regex(@"\bnew\s+([A-Z]\w*)", RegexOptions.Compiled);
+    private static readonly Regex _staticCallRegex = new Regex(@"\b([A-Z]\w*)\.", RegexOptions.Compiled);
+    private static readonly Regex _methodCallRegex = new Regex(@"\b([a-zA-Z]\w*)\s*\(", RegexOptions.Compiled);
+    private static readonly Regex _declarationRegex = new Regex(@"\b(var|int|string|bool|double|float|char|long|List<[^>]+>|[A-Z]\w*)\s+([a-zA-Z_]\w*)\s*(=|;)", RegexOptions.Compiled);
+    private static readonly Regex _transformRegex = new Regex(@"[^=!><]=[^=]", RegexOptions.Compiled);
+    private static readonly Regex _incDecRegex = new Regex(@"(\+\+|--)", RegexOptions.Compiled);
+
     public void Analizar(List<string> lineas)
     {
         // Reiniciar contadores
@@ -35,26 +46,26 @@ public class Resume
             if (string.IsNullOrEmpty(l) || l.StartsWith("//")) continue;
 
             // 1. Detectar Bucles (for, foreach, while)
-            if (Regex.IsMatch(l, @"\b(for|foreach|while)\b"))
+            if (_loopRegex.IsMatch(l))
             {
                 Bucles++;
             }
 
             // 2. Detectar Clases Usadas
             // Instanciación: new Clase(...)
-            foreach (Match m in Regex.Matches(l, @"\bnew\s+([A-Z]\w*)"))
+            foreach (Match m in _newClassRegex.Matches(l))
             {
                 ClasesUsadas.Add(m.Groups[1].Value);
             }
             // Acceso estático: Clase.Metodo (Heurística: Empieza con Mayúscula seguido de punto)
-            foreach (Match m in Regex.Matches(l, @"\b([A-Z]\w*)\."))
+            foreach (Match m in _staticCallRegex.Matches(l))
             {
                 string clase = m.Groups[1].Value;
                 if (!Keywords.Contains(clase.ToLower())) ClasesUsadas.Add(clase);
             }
 
             // 3. Detectar Métodos Usados: nombreMetodo(...)
-            foreach (Match m in Regex.Matches(l, @"\b([a-zA-Z]\w*)\s*\("))
+            foreach (Match m in _methodCallRegex.Matches(l))
             {
                 string metodo = m.Groups[1].Value;
                 if (!Keywords.Contains(metodo)) MetodosUsados.Add(metodo);
@@ -63,7 +74,7 @@ public class Resume
             // 4. Declaraciones vs Transformaciones
             // Declaración: Tipo variable = ...; o Tipo variable;
             // Busca: (Tipo o var) espacio (nombreVariable) espacio opcional (= o ;)
-            var matchDecl = Regex.Match(l, @"\b(var|int|string|bool|double|float|char|long|List<[^>]+>|[A-Z]\w*)\s+([a-zA-Z_]\w*)\s*(=|;)");
+            var matchDecl = _declarationRegex.Match(l);
             
             bool esDeclaracion = false;
             if (matchDecl.Success)
@@ -81,7 +92,7 @@ public class Resume
             {
                 // Transformación: asignación (=, +=, etc) o incremento/decremento (++, --)
                 // Se excluyen comparaciones (==, !=, >=, <=)
-                if (Regex.IsMatch(l, @"[^=!><]=[^=]") || Regex.IsMatch(l, @"(\+\+|--)"))
+                if (_transformRegex.IsMatch(l) || _incDecRegex.IsMatch(l))
                 {
                     Transformaciones++;
                 }
