@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
+namespace DBT.Models;
+
 public class SourceFile
 {
     public List<string> Lineas { get; private set; }

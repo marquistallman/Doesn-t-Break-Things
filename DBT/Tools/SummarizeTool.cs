@@ -4,6 +4,11 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 
+using DBT.Models;
+using DBT.Services;
+
+namespace DBT.Tools;
+
 public class SummarizeTool : Tools
 {
     public override async Task Ejecutar(string[] args)

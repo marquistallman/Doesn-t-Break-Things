@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json;
 using System.Threading.Tasks;
-
+namespace DBT.Services;
 // Clase para la Respuesta: Procesa el JSON crudo de Ollama y extrae el texto
 public class OllamaResponse : OllamaBridge
 {

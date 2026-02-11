@@ -1,3 +1,4 @@
+namespace DBT.Models;
 public class ProblemDetail
 {
     public string Nombre { get; set; }

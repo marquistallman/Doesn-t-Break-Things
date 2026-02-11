@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace DBT;
+namespace DBT.Services;
 
 public class OllamaImplementFile : OllamaBridge
 {
@@ -21,9 +21,13 @@ public class OllamaImplementFile : OllamaBridge
                      $"Requirements: {sourceContext}\n" +
                      $"Project Structure: {targetContext}\n" +
                      $"[RULES]:\n" +
-                     $"1. Output ONLY the code for the file.\n" +
+                     $"1. Output ONLY the code for the file '{path}'. Do NOT include content of other files. Import them as modules.\n" +
                      $"2. Do not include markdown code blocks (```) if possible. Just the raw code.\n" +
-                     $"3. Ensure the code is complete, compilable, and follows the instructions.\n",
+                     $"3. Ensure the code is complete, compilable, and follows the instructions.\n" +
+                     $"4. BEST PRACTICES:\n" +
+                     $"   - For Python math, use libraries like 'sympy' instead of regex replacements for robustness.\n" +
+                     $"   - Do not define classes/functions inside this file if they belong to other modules in the project structure.\n" +
+                     $"   - If writing tests, MOCK user inputs (e.g., input()) and verify return types correctly.\n",
             stream = false
         };
 

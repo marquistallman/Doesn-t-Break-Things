@@ -4,9 +4,9 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-
-namespace DBT;
-
+using DBT.Services;
+using DBT.Models;
+namespace DBT.Tools;
 public class ImplementTool : Tools
 {
     public override async Task Ejecutar(string[] args)
@@ -139,6 +139,25 @@ public class ImplementTool : Tools
                         } catch { }
                     }
 
+                    // Intento de recuperación 3: Objeto contenedor { "files": [...] } (Formato visto en context)
+                    if (plan == null)
+                    {
+                        try 
+                        {
+                            using JsonDocument doc = JsonDocument.Parse(processedJson);
+                            if (doc.RootElement.ValueKind == JsonValueKind.Object)
+                            {
+                                JsonElement filesElement;
+                                if ((doc.RootElement.TryGetProperty("files", out filesElement) || 
+                                     doc.RootElement.TryGetProperty("items", out filesElement)) && 
+                                     filesElement.ValueKind == JsonValueKind.Array)
+                                {
+                                    plan = JsonSerializer.Deserialize<List<FilePlanItem>>(filesElement.GetRawText(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                                }
+                            }
+                        } catch { }
+                    }
+
                     if (plan == null) Program.Print($"Error al interpretar JSON (Intento {currentRetry}).", ConsoleColor.Red);
                     
                     if (currentRetry == maxRetries && plan == null) Console.WriteLine(planJson);
@@ -185,6 +204,7 @@ public class ImplementTool : Tools
     }
 
     // Clase auxiliar para deserializar el plan
+    
     private class FilePlanItem
     {
         [System.Text.Json.Serialization.JsonPropertyName("name")]
@@ -214,7 +234,7 @@ public class ImplementTool : Tools
                     file.Contains(Path.DirectorySeparatorChar + "node_modules") ||
                     file.Contains(Path.DirectorySeparatorChar + ".vs")) 
                     continue;
-
+                 // Llamada para actualizar estadísticas de lenguajes, aunque no se use el resultado aquí
                 // Ignorar archivos binarios o desconocidos para no saturar el contexto
                 // Ahora SourceFile soporta más tipos, pero mantenemos el filtro de seguridad
                 if (SourceFile.IdentificarLenguaje(file) == "Desconocido" && !file.EndsWith(".txt")) continue;

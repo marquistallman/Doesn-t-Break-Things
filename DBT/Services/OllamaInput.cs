@@ -4,6 +4,8 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
+namespace DBT.Services;
+
 // Clase para la Entrada: Prepara el prompt y lo envía a Ollama
 public class OllamaInput : OllamaBridge
 {

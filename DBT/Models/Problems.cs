@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+namespace DBT.Models;
 public class Problems
 {
     public string RutaArchivo { get; private set; }

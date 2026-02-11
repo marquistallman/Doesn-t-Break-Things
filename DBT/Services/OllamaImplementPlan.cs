@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace DBT;
+namespace DBT.Services;
 
 public class OllamaImplementPlan : OllamaBridge
 {
@@ -29,15 +29,16 @@ public class OllamaImplementPlan : OllamaBridge
                      $"[OUTPUT]: A JSON Array where each item represents a file.\n" +
                      $"[EXAMPLE]: \n" +
                      $"[\n" +
-                     $"  {{ \"name\": \"src/main.py\", \"instructions\": \"Implement the main entry point. Import math_parser. Initialize the app...\" }},\n" +
-                     $"  {{ \"name\": \"tests/test_main.py\", \"instructions\": \"Create unit tests for the main module...\" }}\n" +
+                     $"  {{ \"name\": \"src/math_parser.py\", \"instructions\": \"Define class 'MathParser' with method 'parse'. No external imports needed.\" }},\n" +
+                     $"  {{ \"name\": \"src/main.py\", \"instructions\": \"Import 'MathParser' from 'src.math_parser'. Call 'MathParser.parse'.\" }}\n" +
                      $"]\n" +
                      $"[SOURCE]:\n{sourceContext}\n" +
                      $"[TARGET]:\n{targetContext}\n" +
                      $"[IMPORTANT]: \n" +
                      $"1. Return ONLY the JSON array.\n" +
                      $"2. Use the programming language and file extensions specified in SOURCE (e.g. .py, .js, .cs).\n" +
-                     $"3. Do NOT use generic instructions. Extract specific requirements for each file from SOURCE.",
+                     $"3. Do NOT use generic instructions. Extract specific requirements for each file from SOURCE.\n" +
+                     $"4. In 'instructions', explicitly specify what to import (and from where) and enforce exact function/class names to be defined in that file.",
             stream = false,
             format = "json" // Fuerza al modelo a responder en JSON válido
         };
